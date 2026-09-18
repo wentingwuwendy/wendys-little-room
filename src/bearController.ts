@@ -9,6 +9,20 @@ export const obstacles:BoxObstacle[]=[
  ...[-2.37,-1.28].map(z=>({x:3.22,z,w:.1,d:.1}))
 ];
 export function walkable(x:number,z:number){return x>=MIN_X&&x<=MAX_X&&z>=MIN_Z&&z<=MAX_Z&&!obstacles.some(o=>Math.abs(x-o.x)<o.w/2+.24&&Math.abs(z-o.z)<o.d/2+.24);}
+export const dockingPoints=[[-.95,-.55],[-.95,2.10],[1.87,2.10],[1.87,-.55]].map(([x,z])=>new T.Vector3(x,.24,z));
+export function clearSegment(a:T.Vector3,b:T.Vector3){const n=Math.ceil(a.distanceTo(b)/.035);for(let i=0;i<=n;i++){const t=n?i/n:0;if(!walkable(T.MathUtils.lerp(a.x,b.x,t),T.MathUtils.lerp(a.z,b.z,t)))return false;}return true;}
+function shortestRoute(nodes:T.Vector3[],connected:(a:number,b:number)=>boolean){
+ const cost=nodes.map(()=>Infinity),previous=nodes.map(()=>-1),open=new Set(nodes.map((_,i)=>i));cost[0]=0;
+ while(open.size){let best=-1;for(const i of open)if(best<0||cost[i]<cost[best])best=i;if(!isFinite(cost[best]))return null;if(best===1){const path=[1];while(previous[path[0]]>=0)path.unshift(previous[path[0]]);return path.slice(1).map(i=>nodes[i].clone());}open.delete(best);for(const i of open){if(!connected(best,i))continue;const d=cost[best]+nodes[best].distanceTo(nodes[i]);if(d<cost[i]){cost[i]=d;previous[i]=best;}}}return null;
+}
+/** Exact endpoints and long, visible straight segments instead of grid-sized steps. */
+export function findStraightPath(start:T.Vector3,end:T.Vector3,visiting=false){
+ const a=start.clone().setY(.24),b=end.clone().setY(.24);
+ if(clearSegment(a,b))return [b];
+ if(visiting){const docks=[a,b,...dockingPoints];const route=shortestRoute(docks,(i,j)=>clearSegment(docks[i],docks[j]));if(route)return route;}
+ const corners=obstacles.flatMap(o=>[-1,1].flatMap(dx=>[-1,1].map(dz=>new T.Vector3(o.x+dx*(o.w/2+.27),.24,o.z+dz*(o.d/2+.27))))).filter(p=>walkable(p.x,p.z));
+ const nodes=[a,b,...corners];return shortestRoute(nodes,(i,j)=>clearSegment(nodes[i],nodes[j]));
+}
 const point=(id:number)=>new T.Vector3(MIN_X+(id%NX)*STEP,.24,MIN_Z+Math.floor(id/NX)*STEP);
 function nearest(v:T.Vector3){let best=-1,distance=Infinity;for(let id=0;id<NX*NZ;id++){const p=point(id);if(!walkable(p.x,p.z))continue;const d=(v.x-p.x)**2+(v.z-p.z)**2;if(d<distance){best=id;distance=d;}}return best;}
 /** A* on a clearance grid; diagonal corner cutting is explicitly forbidden. */
@@ -22,13 +36,19 @@ export type Visit={position:T.Vector3;lookAt:T.Vector3;pose?:'touch'|'look'|'sit
 export function createBearController(bear:T.Group,room:T.Group,reduced:boolean,onStatus:(s:string)=>void){
  let route:T.Vector3[]=[],visit:Visit|null=null,phase=0,activity='idle',elapsed=0,sit=0,reach=0,wait=0,callback:(()=>void)|undefined;
  const chairPosition=new T.Vector3(.7,1.13,.82),chairEntry=new T.Vector3(.7,.24,-.24);
+ const seatedLook=new T.Vector3(.7,1,-3);
+ function seatApproach(from:T.Vector3){const dx=from.x-.7,dz=from.z-.82;const t=1/Math.max(Math.abs(dx)/1.04,Math.abs(dz)/.98);return new T.Vector3(.7+dx*t,.24,.82+dz*t);}
  const departurePosition=new T.Vector3();let departureSit=0;
  const marker=new T.Mesh(new T.RingGeometry(.09,.17,40),new T.MeshBasicMaterial({color:'#fff9dc',transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.userData.noRaycast=true;marker.userData.noOutline=true;room.add(marker);let markerTime=0;
  const pose=bear.userData.setPose as (p:{sit:number;walk:number;phase:number;reach:number;look:number})=>void;
  function face(target:T.Vector3,dt:number){const direction=Math.atan2(target.x-bear.position.x,target.z-bear.position.z);const delta=Math.atan2(Math.sin(direction-bear.rotation.y),Math.cos(direction-bear.rotation.y));bear.rotation.y+=delta*Math.min(1,dt*10);}
  function go(destination:T.Vector3,next:Visit|null){
-  const wasSitting=['sitting','seating','leaving'].includes(activity);const start=wasSitting?chairEntry:bear.position;
-  const path=findPath(start,destination);if(!path)return false;
+  const wasSitting=['sitting','seating','leaving'].includes(activity);
+  if(wasSitting&&next?.pose==='sit'){seatedLook.copy(next.lookAt);callback=next.onArrival;wait=.12;return true;}
+  if(wasSitting)chairEntry.copy(seatApproach(destination));
+  if(next?.pose==='sit'){chairEntry.copy(seatApproach(bear.position));destination=chairEntry;seatedLook.copy(next.lookAt);}
+  const start=wasSitting?chairEntry:bear.position;
+  const path=findStraightPath(start,destination,!!next);if(!path)return false;
   // Cancel the prior destination and its pending action whenever the user chooses again.
   if(wasSitting){departurePosition.copy(bear.position);departureSit=sit;}
   callback=undefined;wait=0;visit=next;route=path;activity=wasSitting?'leaving':'walking';elapsed=0;
@@ -46,19 +66,19 @@ export function createBearController(bear:T.Group,room:T.Group,reduced:boolean,o
    while(route.length&&budget>0){const p=route[0],distance=Math.hypot(p.x-bear.position.x,p.z-bear.position.z);if(distance<budget){face(p,dt);bear.position.set(p.x,.24,p.z);budget-=distance;route.shift();}else{face(p,dt);const r=budget/distance;bear.position.x+=(p.x-bear.position.x)*r;bear.position.z+=(p.z-bear.position.z)*r;bear.position.y=.24;budget=0;}}
    if(!route.length){activity=visit?.pose==='sit'?'seating':visit?'interacting':'idle';elapsed=0;if(activity==='idle')onStatus('到啦。再点一处空地，或选一件喜欢的东西。');}
   }else if(activity==='seating'){
-   const t=Math.min(1,elapsed/.7),smooth=t*t*(3-2*t);bear.position.lerpVectors(chairEntry,chairPosition,smooth);bear.position.y+=Math.sin(t*Math.PI)*.19;sit=smooth;face(new T.Vector3(.7,1,-3),dt);
+   const t=Math.min(1,elapsed/.7),smooth=t*t*(3-2*t);bear.position.lerpVectors(chairEntry,chairPosition,smooth);bear.position.y+=Math.sin(t*Math.PI)*.19;sit=smooth;face(seatedLook,dt);
    if(t===1){activity='sitting';callback=visit?.onArrival;visit=null;wait=callback?.5:0;onStatus('小熊坐下休息了。点地面就能继续走。');}
   }else if(activity==='interacting'){
    if(visit)face(visit.lookAt,dt);reach=T.MathUtils.damp(reach,visit?.pose==='touch'?1:visit?.pose==='read'?.55:0,10,dt);
    if(elapsed>.8){callback=visit?.onArrival;visit=null;activity='waiting';wait=.2;onStatus('小熊陪你一起看看。');}
   }else if(activity==='waiting'){if(wait>0){wait-=dt;if(wait<=0){const fn=callback;callback=undefined;fn?.();}}}
-  else if(activity==='sitting'&&wait>0){wait-=dt;if(wait<=0){const fn=callback;callback=undefined;fn?.();}}
+  else if(activity==='sitting'){face(seatedLook,dt);if(wait>0){wait-=dt;if(wait<=0){const fn=callback;callback=undefined;fn?.();}}}
   else if(activity==='idle')reach=T.MathUtils.damp(reach,0,8,dt);
   pose({sit,walk:reduced?0:walking,phase,reach,look:activity==='interacting'||activity==='waiting'?.25:0});
   bear.userData.state=activity;
   return activity==='walking'||activity==='leaving'||activity==='seating'||activity==='interacting';
  }
  pose({sit:0,walk:0,phase:0,reach:0,look:0});
- return {move,interact,sitDown,update,cancelPending,getState:()=>({activity,position:bear.position.toArray(),pending:!!visit||!!callback}),chairEntry};
+ return {move,interact,sitDown,update,cancelPending,getState:()=>({activity,position:bear.position.toArray(),route:route.map(p=>p.toArray()),pending:!!visit||!!callback}),chairEntry};
 }
 

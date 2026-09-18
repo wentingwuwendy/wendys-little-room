@@ -8,6 +8,8 @@ import { createCozyRoom, type Action } from './cozyRoom';
 import { createBearController } from './bearController';
 import { bookGalleryHTML, mountBookGallery } from './bookGallery';
 import { objectFocusHTML, mountObjectFocus, type FocusKind } from './objectFocus';
+import { musicFocusHTML,mountMusicFocus } from './musicFocus';
+import { createRecordPlayer } from './recordPlayer';
 import { deviceFocusHTML, mountDeviceFocus, type DeviceKind } from './deviceFocus';
 import { createKeyboardIPad, createPhoneController } from './deviceModels';
 import { internships, projects, cities, titles, type Story } from './content';
@@ -21,6 +23,7 @@ let returnFocus:HTMLElement|null=null;
 let cancelBearVisit=()=>{};
 let disposeBooks=()=>{};
 let focusSources:Record<FocusKind,THREE.Group>|null=null;
+let musicSource:THREE.Group|null=null;
 let deviceSources:Record<DeviceKind,THREE.Group>|null=null;
 dialog.addEventListener('close',()=>{disposeBooks();disposeBooks=()=>{};});
 let night=false;
@@ -49,7 +52,7 @@ function openDevice(kind:DeviceKind){
  try{disposeBooks=mountDeviceFocus(content.querySelector<HTMLElement>('.device-focus')!,kind,source);}
  catch{show('life',`<h2 id="dialog-title">${kind==='games'?'游戏时间':'装腔启示录'}</h2><p class="lead">当前浏览器暂时无法显示 3D 组件，请开启硬件加速或使用其他浏览器。</p>`);}
 }
-function renderLife(tab:string,isolated=false){if(tab==='books'){openFocused('books');return;}if(tab==='games'||(tab==='shows'&&isolated)){openDevice(tab);return;}const tabs=[['books','书页之间'],['games','游戏时间'],['shows','追剧清单'],['music','耳机与现场'],['objects','可爱收藏']];let body='';
+function renderLife(tab:string,isolated=false){if(tab==='music'&&isolated){show('life',musicFocusHTML(),true);disposeBooks=mountMusicFocus(content.querySelector<HTMLElement>('.music-focus')!,musicSource??createRecordPlayer());return;}if(tab==='books'){openFocused('books');return;}if(tab==='games'||(tab==='shows'&&isolated)){openDevice(tab);return;}const tabs=[['books','书页之间'],['games','游戏时间'],['shows','追剧清单'],['music','耳机与现场'],['objects','可爱收藏']];let body='';
  if(tab==='books')body=bookGalleryHTML();
  const cards:Record<string,string[][]>={games:[['🎮','王者荣耀','峡谷里的游戏时间。'],['☁','人类一败涂地','喜欢这份摇摇晃晃的快乐。'],['⚔','元气骑士','也喜欢像素世界里的冒险。']],shows:[['▻','中国电视剧','《月光变奏曲》《唐朝诡事录》《庆余年》'],['▻','美剧','《破产姐妹》《使女的故事》'],['✳','综艺 / 追星','范丞丞']],music:[['♫','歌单里的名字','薛之谦 · 黄子弘凡'],['♪','也听说唱','Jony J · TizzyT'],['✧','从耳机到现场','喜欢听歌，也喜欢现场。演出照片的位置留好了，等下一次整理。']],objects:[['🧸','小熊毛绒玩具','给房间留一个柔软的位置。'],['✿','可爱的小摆件','把喜欢的小东西，慢慢收集到身边。'],['✈','冰箱贴收藏','每个城市，都可以留下一枚小小的纪念。']]};
  if(tab!=='books')body=`<div class="life-list">${(cards[tab]||cards.objects).map(([icon,title,desc])=>`<div class="life-item"><span class="life-icon">${icon}</span><h3>${title}</h3><p>${desc}</p></div>`).join('')}</div>`;
@@ -74,7 +77,7 @@ function initRoom(){
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setClearColor(0x000000,0);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
  const scene=new THREE.Scene();const camera=new THREE.OrthographicCamera(-7,7,6,-6,.1,70);const start=new THREE.Vector3(11,9.5,13);camera.position.copy(start);
  const controls=new OrbitControls(camera,canvas);controls.target.set(0,2.25,0);controls.enableDamping=!reduced;controls.dampingFactor=.08;controls.enablePan=false;controls.enableZoom=true;controls.zoomSpeed=.75;controls.minZoom=.7;controls.maxZoom=2.2;controls.minAzimuthAngle=.3;controls.maxAzimuthAngle=1.05;controls.minPolarAngle=.74;controls.maxPolarAngle=1.18;controls.update();controls.saveState();
- const model=createCozyRoom();scene.add(model.room);focusSources={books:model.bookGroup,travel:model.board};deviceSources={games:model.gamepad,shows:model.ipad};
+ const model=createCozyRoom();scene.add(model.room);focusSources={books:model.bookGroup,travel:model.board};deviceSources={games:model.gamepad,shows:model.ipad};musicSource=model.player;
  const bearController=createBearController(model.bear,model.room,reduced,s=>$('#bear-status').textContent=s);
  cancelBearVisit=()=>bearController.cancelPending();
  $('#bear-sit').addEventListener('click',()=>bearController.sitDown());
@@ -128,7 +131,7 @@ function initRoom(){
   if(id==='chair'){bearController.sitDown();return;}
   if(id==='bear'){$('#bear-status').textContent='点一处空地，带我一起走走吧。';return;}
   const spots:Partial<Record<Action,[number,number,number,number,number,'touch'|'look'|'read'|'sit']>>={
-   experience:[-2.38,.25,-2.78,4.26,.5,'look'],projects:[.7,-.24,.3,2.6,-1.65,'sit'],about:[-1.65,.15,-2.64,2.1,.25,'read'],books:[-1.65,-.30,-3.2,4.2,-.65,'read'],music:[1.8,-.70,1.8,2.2,-1.8,'look'],games:[2.1,2.24,2.6,.8,1.48,'touch'],shows:[-1.15,-.3,-1.57,2.6,-1.80,'look'],objects:[-.2,2.1,-.2,1,2.1,'look'],travel:[-3.1,1.95,-3.8,3.5,2.04,'look'],contact:[2.75,-.72,2.87,2.05,-1.5,'look'],lamp:[-1.40,2.1,-2.05,2.1,2.1,'touch']};
+   experience:[-.95,-.55,-2.78,4.26,.5,'look'],projects:[.7,-.24,.3,2.6,-1.65,'sit'],about:[-.95,-.55,-2.64,2.1,.25,'read'],books:[-.95,-.55,-3.2,4.2,-.65,'read'],music:[1.87,-.55,1.8,2.2,-1.8,'look'],games:[1.87,2.10,2.6,.8,1.48,'touch'],shows:[.7,-.24,-1.57,2.6,-1.80,'sit'],objects:[-.2,2.1,-.2,1,2.1,'look'],travel:[-3.1,1.95,-3.8,3.5,2.04,'look'],contact:[2.75,-.72,2.87,2.05,-1.5,'look'],lamp:[-.95,2.10,-2.05,2.1,2.1,'touch']};
   const spot=spots[id];if(!spot)return;
   bearController.interact({position:new THREE.Vector3(spot[0],.3,spot[1]),lookAt:new THREE.Vector3(spot[2],spot[3],spot[4]),pose:spot[5],onArrival:()=>{
    if(id==='lamp')toggleTheme();else if(['books','music','games','shows','objects'].includes(id))renderLife(id,true);else if(id==='travel')openFocused('travel');else openStory(id as Story);

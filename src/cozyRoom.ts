@@ -5,6 +5,8 @@ import { createPandaPlush } from './pandaPlush';
 import { createSouvenirMagnet } from './souvenirMagnets';
 import { books, createBookModel } from './bookModels';
 import { internationalExperiences } from './international';
+import { createMonstera } from './monstera';
+import { createRecordPlayer } from './recordPlayer';
 import { createCurtains } from './curtains';
 import { createKeyboardIPad, createPhoneController } from './deviceModels';
 
@@ -83,7 +85,7 @@ export function createCozyRoom(){
   for(let i=0;i<9;i++){const angle=i*2.4,h=.45+(i%4)*.17;const top=new T.Vector3(Math.cos(angle)*.14,.39+h,Math.sin(angle)*.14);const curve=new T.CatmullRomCurve3([new T.Vector3(0,.35,0),new T.Vector3(Math.cos(angle)*.05,.65,Math.sin(angle)*.05),top]);const stem=new T.Mesh(new T.TubeGeometry(curve,12,.012,6,false),mat('#65734b'));g.add(stem);const leaf=new T.Mesh(leafGeometry,leafMat);leaf.position.copy(top);leaf.rotation.set(-.2-(i%3)*.24,angle,Math.sin(angle)*.58);leaf.scale.setScalar(.65+(i%3)*.15);leaf.castShadow=true;leaf.receiveShadow=true;g.add(leaf);}
   return g;
  }
- plant(3.28,.23,.28,1.36);plant(2.85,2.25,-2.6,.48);
+ const monstera=createMonstera();monstera.position.set(3.28,.23,.28);room.add(monstera);plant(2.85,2.25,-2.6,.48);
  // Open laptop with a custom screen, keyboard and trackpad.
  const laptop=new T.Group();laptop.position.set(.3,2.06,-1.63);laptop.rotation.y=-.12;room.add(laptop);action(laptop,'projects');
  box(laptop,dark,[1.18,.055,.8],[0,.02,.1],.04);box(laptop,mat('#777b70'),[1.02,.008,.44],[0,.052,-.015],.01);
@@ -97,7 +99,7 @@ export function createCozyRoom(){
  const pen=cyl(notes,gold,.016,.6,[.54,.047,.05]);pen.rotation.x=Math.PI/2;pen.rotation.z=.3;
  const cup=cyl(room,trim,.135,.23,[-.62,2.14,-1.48]);cyl(room,mat('#574432'),.112,.007,[-.62,2.261,-1.48]);const handle=new T.Mesh(new T.TorusGeometry(.085,.024,10,24),trim);handle.position.set(-.45,2.15,-1.48);room.add(handle);void cup;
  // Record player and a tiny envelope.
- const player=new T.Group();room.add(player);action(player,'music');box(player,edge,[.88,.16,.64],[1.8,2.12,-1.83]);cyl(player,dark,.26,.022,[1.73,2.218,-1.83]);cyl(player,clay,.085,.028,[1.73,2.225,-1.83]);box(player,gold,[.024,.026,.38],[2.08,2.24,-1.78]);
+ const player=createRecordPlayer();player.position.set(1.8,2.12,-1.83);room.add(player);action(player,'music');
  const letter=new T.Group();room.add(letter);action(letter,'contact');box(letter,trim,[.44,.018,.28],[2.87,2.05,-1.5]);
  // Framed travel magnet collection on the left wall.
  const board=new T.Group();board.name='international-board';board.position.set(-3.86,3.65,2.04);board.rotation.y=Math.PI/2;room.add(board);action(board,'travel');
@@ -106,8 +108,6 @@ export function createCozyRoom(){
   const e=internationalExperiences[i],magnet=createSouvenirMagnet(e.magnet);magnet.position.set((i%3-1)*.5,.44-Math.floor(i/3)*.5,.09);magnet.rotation.z=(i%3-1)*.05;magnet.userData.experienceId=e.id;board.add(magnet);
   plate(board,textTexture(e.name,'#52645e','#f3ecd6',55),.36,.105,[(i%3-1)*.5,.30-Math.floor(i/3)*.5,.103]);
  }
- // Small framed Woolf-inspired title card, no invented quotation.
- const poster=new T.Group();room.add(poster);poster.position.set(-3.86,4.94,2.07);poster.rotation.y=Math.PI/2;action(poster,'books');box(poster,oak,[.75,.95,.06],[0,0,0]);plate(poster,textTexture('A ROOM\nOF ONE’S\nOWN','#eee5ce','#7c8666',42),.64,.82,[0,0,.04]);
  // Tall lamp; the room's physical day/night switch.
  const lamp=new T.Group();lamp.position.set(-2.05,.23,2.1);room.add(lamp);action(lamp,'lamp');cyl(lamp,dark,.38,.09,[0,.05,0]);cyl(lamp,gold,.032,3.12,[0,1.6,0]);
  const shadeMat=clothMaterial('#f4e4bc');shadeMat.side=T.DoubleSide;shadeMat.emissive.set('#ffd485');shadeMat.emissiveIntensity=0;const shade=new T.Mesh(new T.CylinderGeometry(.34,.57,.68,48,1,true),shadeMat);shade.position.y=3.2;shade.castShadow=true;lamp.add(shade);cyl(lamp,trim,.33,.025,[0,3.545,0]);
@@ -130,8 +130,8 @@ export function createCozyRoom(){
  // Upholstered ottoman and an anatomically shaped controller with separate controls.
  cyl(room,linen,.45,.44,[2.6,.49,1.48]);const ottomanSeam=new T.Mesh(new T.TorusGeometry(.442,.009,6,72),clothMaterial('#c4bda9'));ottomanSeam.rotation.x=Math.PI/2;ottomanSeam.position.set(2.6,.687,1.48);room.add(ottomanSeam);
  const gamepad=createPhoneController();gamepad.position.set(2.6,.755,1.48);gamepad.rotation.set(-Math.PI/2,0,-.15);gamepad.scale.setScalar(.255);room.add(gamepad);action(gamepad,'games');
- const ipad=createKeyboardIPad();ipad.position.set(-1.57,2.065,-1.80);ipad.rotation.y=.64;room.add(ipad);action(ipad,'shows');
- return {room,clickable,bear,chair,folders,bookGroup,board,ipad,gamepad,setNight(_night:boolean,blend:number){nightWindowMat.opacity=blend;shadeMat.emissiveIntensity=blend*.75;bulb.intensity=blend*9;}};
+ const ipad=createKeyboardIPad();ipad.position.set(-1.57,2.065,-1.80);ipad.rotation.y=.64;ipad.scale.setScalar(.75);room.add(ipad);action(ipad,'shows');
+ return {room,clickable,bear,chair,folders,bookGroup,board,ipad,gamepad,player,setNight(_night:boolean,blend:number){nightWindowMat.opacity=blend;shadeMat.emissiveIntensity=blend*.75;bulb.intensity=blend*9;}};
 }
 
 

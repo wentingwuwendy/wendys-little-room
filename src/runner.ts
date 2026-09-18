@@ -44,41 +44,26 @@ export class Runner {
 }
 
 export function drawRunner(c:CanvasRenderingContext2D,game:Runner,best=0) {
- const w=900,h=430,ground=334;
- c.clearRect(0,0,w,h);c.fillStyle='#f4f0e5';c.fillRect(0,0,w,h);
- c.fillStyle='#737966';c.font='16px monospace';c.textAlign='left';c.fillText('WENDY / POCKET RUN',33,37);
- c.textAlign='right';c.fillText(`HI ${String(best).padStart(3,'0')}   ${String(game.score).padStart(3,'0')}`,w-33,37);
- // Quiet, continuous scenery makes the forward motion legible.
- c.strokeStyle='#d9ddce';c.lineWidth=2;
- for(let i=0;i<5;i++){
-  const x=((i*227-game.distance*.17)%1135+1135)%1135-110;
-  c.beginPath();c.moveTo(x,230);c.quadraticCurveTo(x+55,150,x+120,230);c.quadraticCurveTo(x+155,190,x+197,230);c.stroke();
- }
- c.strokeStyle='#8b947a';c.lineWidth=2;c.beginPath();c.moveTo(0,ground);c.lineTo(w,ground);c.stroke();
- c.fillStyle='#c4c9b6';
- for(let i=0;i<22;i++){const x=((i*49-game.distance)%1078+1078)%1078-50;c.fillRect(x,ground+14+(i%3)*8,8+(i%4)*4,2);}
- const logs=game.state==='ready'?[{x:660,width:37,height:52,scored:false}]:game.logs;
- for(const log of logs){
-  c.fillStyle='#ae825d';c.strokeStyle='#755f49';c.lineWidth=2.5;
-  c.beginPath();c.roundRect(log.x,ground-log.height,log.width,log.height,4);c.fill();c.stroke();
-  c.fillStyle='#dbc39e';c.beginPath();c.ellipse(log.x+log.width/2,ground-log.height+3,log.width/2,6,0,0,Math.PI*2);c.fill();c.stroke();
-  c.strokeStyle='#866647';c.lineWidth=1.8;
-  for(let j=1;j<=2;j++){c.beginPath();c.moveTo(log.x+j*log.width/3,ground-log.height+14);c.lineTo(log.x+j*log.width/3-2,ground-5);c.stroke();}
- }
- const x=173,y=ground-game.height,phase=game.state==='running'&&game.height===0?Math.sin(game.elapsed*19):.15;
- c.fillStyle='#67745222';c.beginPath();c.ellipse(x,ground+2,22-game.height*.035,4,0,0,Math.PI*2);c.fill();
- c.strokeStyle=game.state==='over'?'#ac6857':'#465940';c.fillStyle=c.strokeStyle;c.lineWidth=5.2;c.lineCap='round';c.lineJoin='round';
- c.beginPath();c.arc(x+2,y-66,10,0,Math.PI*2);c.stroke();
- c.beginPath();c.moveTo(x+2,y-55);c.lineTo(x-3,y-29);
- c.moveTo(x,y-47);c.lineTo(x+15,y-37+phase*8);c.lineTo(x+23,y-44+phase*8);
- c.moveTo(x,y-46);c.lineTo(x-16,y-43-phase*8);c.lineTo(x-21,y-34-phase*8);
- c.moveTo(x-3,y-29);c.lineTo(x+phase*17,y-14);c.lineTo(x+phase*22+3,y-2);
- c.moveTo(x-3,y-29);c.lineTo(x-phase*17,y-14);c.lineTo(x-phase*22-3,y-2);c.stroke();
+ const w=900,h=430,ground=340;
+ c.clearRect(0,0,w,h);c.fillStyle='#fff';c.fillRect(0,0,w,h);
+ c.fillStyle='#111';c.font='26px "Microsoft YaHei",sans-serif';c.textAlign='left';c.fillText(`得分: ${game.score}`,32,42);
+ if(best>0){c.textAlign='right';c.font='18px "Microsoft YaHei",sans-serif';c.fillText(`最高: ${best}`,w-32,40);}
+ c.fillRect(0,ground,w,6);
+ const logs=game.state==='ready'?[{x:710,width:40,height:68,scored:false}]:game.logs;
+ for(const log of logs)c.fillRect(log.x,ground-log.height,log.width,log.height);
+ const x=173,y=ground-game.height,phase=game.state==='running'&&game.height===0?Math.sin(game.elapsed*20):.25;
+ c.strokeStyle='#111';c.lineWidth=5;c.lineCap='round';c.lineJoin='round';
+ c.beginPath();c.arc(x+3,y-55,8,0,Math.PI*2);c.fill();
+ c.beginPath();c.moveTo(x+2,y-45);c.lineTo(x-3,y-25);
+ c.moveTo(x,y-39);c.lineTo(x+12,y-30+phase*7);c.lineTo(x+18,y-37+phase*7);
+ c.moveTo(x,y-39);c.lineTo(x-12,y-36-phase*7);c.lineTo(x-17,y-29-phase*7);
+ c.moveTo(x-3,y-25);c.lineTo(x+phase*13,y-13);c.lineTo(x+phase*19+2,y-2);
+ c.moveTo(x-3,y-25);c.lineTo(x-phase*13,y-13);c.lineTo(x-phase*19-2,y-2);c.stroke();
+ // A small white cap keeps the runner close to the reference silhouette.
+ c.fillStyle='#fff';c.strokeStyle='#111';c.lineWidth=1.6;c.beginPath();c.ellipse(x+1,y-62,12,4,-.12,0,Math.PI*2);c.fill();c.stroke();
  if(game.state!=='running'){
-  c.fillStyle='#f4f0e5ed';c.fillRect(276,102,352,140);
-  c.textAlign='center';c.fillStyle='#465940';c.font='27px "Microsoft YaHei",sans-serif';
-  c.fillText(game.state==='ready'?'木桩漫游':'游戏结束',452,145);
-  c.fillStyle='#657750';c.beginPath();c.roundRect(363,172,178,48,24);c.fill();
-  c.fillStyle='#fffaf0';c.font='19px "Microsoft YaHei",sans-serif';c.fillText(game.state==='ready'?'开始游戏  ▷':'再跑一次  ↻',452,204);
+  c.fillStyle='#fff';c.fillRect(314,119,272,120);c.textAlign='center';c.fillStyle='#111';c.font='26px "Microsoft YaHei",sans-serif';
+  c.fillText(game.state==='ready'?'开始游戏':'游戏结束',450,164);
+  c.font='21px "Microsoft YaHei",sans-serif';c.fillText(game.state==='ready'?'▷':'↻ 再来一次',450,207);
  }
 }
