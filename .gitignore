@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.pnpm-store/
+.img2threejs*/
+backup-original/
+qa/
+.publish-tools/
+.env
+.env.*
+*.pdf
+*.zip

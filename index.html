@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="theme-color" content="#f5f2e9" />
+<meta name="description" content="欢迎来到吴雯婷 Wendy Wu 的小房间。在书架里翻阅经历，在桌边聊聊喜欢的事，从一枚冰箱贴出发看世界。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23738061'/%3E%3Ctext x='12' y='46' font-size='42' fill='%23fff9ea' font-family='Georgia'%3Ew%3C/text%3E%3C/svg%3E" />
+<title>Wendy’s little room · 吴雯婷的个人网站</title>
+</head>
+<body><div id="app">
+<header class="topbar"><a class="brand" href="./" aria-label="Wendy 的小房间首页"><span class="brand-mark">w.</span><span>Wendy’s little room<small>一间房间，很多面的我。</small></span></a><div class="header-actions"><span class="welcome">很高兴，你来这里坐坐。</span><button class="contact-link" data-open="contact">打个招呼 <span>↗</span></button></div></header>
+<main>
+<section class="intro" aria-labelledby="intro-title"><p class="eyebrow"><span></span> MAKE YOURSELF AT HOME</p><h1 id="intro-title">你好，我是<br><span>吴雯婷</span><i>Wendy.</i></h1><p class="intro-copy">在语言、数据与商业之间探索，<br>也在书页、现场和旅途中，<br>收集生活里的小小心动。</p><div class="profile-tags"><span>香港大学 · 商业人工智能</span><span>厦门大学 · 英语 & 统计学</span></div><button class="explore-link" data-open="about">从认识我开始 <span>↗</span></button><div class="hand-note">我的故事，藏在这些小东西里。<svg viewBox="0 0 100 45" aria-hidden="true"><path d="M3 8 Q 40 48 89 15 M76 13 L90 14 L86 28"/></svg></div></section>
+<section id="room-stage" aria-label="可互动的 3D 微缩房间"><canvas id="room-canvas" tabindex="0" aria-label="拖动旋转房间，滚轮或双指缩放；悬停物件会显示白色轮廓，点击打开故事，点击落地灯切换昼夜。键盘加减键缩放，0 恢复视角。也可使用下方导航访问全部内容。"></canvas><div class="room-caption"><span class="tiny-star">✳</span> ROOM NO. 01 <span class="caption-line"></span> A ROOM OF MY OWN</div><div id="loading">正在给小房间开窗…</div><div id="fallback" hidden>房间暂时无法显示。你仍然可以通过下方按钮，翻阅我的全部故事。</div></section>
+<div class="scene-tools"><button id="theme-toggle" aria-pressed="false"><span id="theme-icon">☼</span><span id="theme-label">白日小憩</span><span class="switch-dot"></span></button><div class="zoom-controls" role="group" aria-label="房间缩放"><button id="zoom-out" aria-label="缩小房间" title="缩小"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5M7 10h6"/></svg></button><output id="zoom-level" aria-label="当前缩放比例">100%</output><button id="zoom-in" aria-label="放大房间" title="放大"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5M7 10h6m-3-3v6"/></svg></button></div><button id="reset-view" aria-label="恢复房间初始角度与缩放" title="恢复视角">↺</button></div><div class="room-hint" id="room-hint"><span class="desktop-hint">拖动旋转 · 滚轮缩放 · 点地面散步 · 点物件探索</span><span class="mobile-hint">单指旋转 · 双指缩放 · 点地面带小熊散步</span></div>
+<div class="bear-guide"><span id="bear-status" role="status" aria-live="polite">点击地面散步，点击物件一起探索。</span><button id="bear-sit" aria-label="让小熊坐在椅子上">让小熊坐坐</button></div><nav class="dock" aria-label="探索我的房间"><button data-open="experience"><span>▤</span><span>经历档案</span><small>书架</small></button><button data-open="projects"><span>▱</span><span>我的项目</span><small>电脑</small></button><button data-open="about"><span>▧</span><span>关于我</span><small>笔记本</small></button><button data-open="life"><span>♫</span><span>生活切片</span><small>私藏好物</small></button><button data-open="travel"><span>✈</span><span>国际经历</span><small>冰箱贴</small></button></nav>
+</main>
+<footer><span>© <span id="year"></span> WENDY WU</span><span>保持好奇，慢慢生长。<span class="footer-flower">✳</span></span></footer>
+<dialog id="story-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><span id="dialog-kicker"></span><button id="close-dialog" aria-label="关闭详情">×</button></div><div id="dialog-content"></div></dialog><div id="toast" role="status" aria-live="polite"></div>
+</div><script type="module" src="/src/main.ts"></script></body></html>

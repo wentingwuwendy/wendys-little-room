@@ -1,0 +1,10 @@
+import * as T from 'three';
+
+function texture(size:number,draw:(c:CanvasRenderingContext2D)=>void){const c=document.createElement('canvas');c.width=c.height=size;draw(c.getContext('2d')!);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
+export function seeded(seed=42){return()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646;};}
+export function woodMaterial(color:string){
+ const random=seeded(45);const grain=texture(512,c=>{c.fillStyle='#c6b395';c.fillRect(0,0,512,512);for(let i=0;i<640;i++){const y=random()*512;c.strokeStyle=`rgba(${random()>.5?'59,36,15':'246,233,203'},${.035+random()*.11})`;c.lineWidth=.3+random()*1.4;c.beginPath();for(let x=0;x<=512;x+=8){const yy=y+Math.sin(x*.012+y*.11)*1.9+Math.sin(x*.043+y*.21)*.6;x?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();}for(let i=0;i<15;i++){c.fillStyle='rgba(64,46,22,.07)';c.fillRect(random()*512,random()*512,10+random()*55,.65);}});grain.colorSpace=T.SRGBColorSpace;
+ return new T.MeshPhysicalMaterial({color,map:grain,bumpMap:grain,bumpScale:.012,roughness:.48,clearcoat:.14,clearcoatRoughness:.65});
+}
+export function clothMaterial(color:string){const weave=texture(128,c=>{c.fillStyle='#898989';c.fillRect(0,0,128,128);for(let i=0;i<128;i+=4){c.fillStyle=i%8?'#777':'#aaa';c.fillRect(i,0,1,128);c.fillStyle=i%8?'#aaa':'#777';c.fillRect(0,i,128,1);}});weave.repeat.set(5,5);return new T.MeshPhysicalMaterial({color,roughness:1,bumpMap:weave,bumpScale:.012,sheen:.75,sheenColor:new T.Color('#f5e8ce'),sheenRoughness:.95});}
+export function furMaterial(color:string){const random=seeded(76);const bump=texture(256,c=>{c.fillStyle='#888';c.fillRect(0,0,256,256);for(let i=0;i<17000;i++){const grey=Math.floor(60+random()*150);c.strokeStyle=`rgb(${grey},${grey},${grey})`;c.lineWidth=.6;c.beginPath();const x=random()*256,y=random()*256;c.moveTo(x,y);c.lineTo(x+random()*2-1,y+2+random()*3);c.stroke();}});bump.repeat.set(2,2);return new T.MeshPhysicalMaterial({color,bumpMap:bump,bumpScale:.021,roughness:1,sheen:1,sheenColor:new T.Color('#f3d7b5'),sheenRoughness:.95});}
