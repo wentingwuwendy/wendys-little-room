@@ -80,7 +80,7 @@ function initRoom(){
  const model=createCozyRoom();scene.add(model.room);focusSources={books:model.bookGroup,travel:model.board};deviceSources={games:model.gamepad,shows:model.ipad};musicSource=model.player;
  const bearController=createBearController(model.bear,model.room,reduced,s=>$('#bear-status').textContent=s);
  cancelBearVisit=()=>bearController.cancelPending();
- $('#bear-sit').addEventListener('click',()=>bearController.sitDown());
+
  const ambient=new THREE.HemisphereLight('#fff6df','#b5ad96',1.8);scene.add(ambient);
  const sun=new THREE.DirectionalLight('#fff3d4',2.4);sun.position.set(-3,9,6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-8;sun.shadow.camera.right=8;sun.shadow.camera.top=8;sun.shadow.camera.bottom=-8;sun.shadow.normalBias=.025;sun.shadow.bias=-.0001;sun.shadow.radius=4;scene.add(sun);
  const fill=new THREE.DirectionalLight('#c8ddd5',.8);fill.position.set(5,4,-2);scene.add(fill);
@@ -104,6 +104,8 @@ function initRoom(){
  const raycastMeshes:THREE.Mesh[]=[];
  model.room.traverseVisible(obj=>{if(obj instanceof THREE.Mesh&&!obj.userData.noOutline&&!obj.userData.noRaycast)raycastMeshes.push(obj);});
  let hovered:THREE.Object3D|null=null;
+ const tooltip=$<HTMLDivElement>('#object-tooltip');
+ const objectHints:Partial<Record<Action,string>>={experience:'文件夹 · 查看实习经历',projects:'电脑 · 查看项目经历',about:'笔记本 · 查看我的简历',books:'书籍 · 翻看喜欢的书',music:'唱片机 · 切换收藏唱片',games:'游戏机 · 玩跳跃小游戏',shows:'iPad · 查看喜欢的剧集',travel:'冰箱贴 · 浏览国际经历',contact:'信封 · 联系我',lamp:'切换白天 / 黑夜',chair:'让小熊猫坐下',bear:'点地面，让小熊猫散步',objects:'查看收藏的小物件'};
  let hoverPointer:{clientX:number;clientY:number}|null=null,hoverDirty=false;
  let pickedPoint=new THREE.Vector3();
  const activePointers=new Map<number,{x:number;y:number}>();
@@ -145,6 +147,14 @@ function initRoom(){
    outline.selectedObjects=meshes;
   }
   canvas.style.cursor=activePointers.size?'grabbing':obj?.userData.ground?'crosshair':obj?'pointer':'grab';
+  const hint=obj&&!obj.userData.ground?objectHints[obj.userData.action as Action]:undefined;
+  tooltip.hidden=!hint||!hoverPointer||activePointers.size>0||dialog.open;
+  if(!tooltip.hidden&&hoverPointer){
+   tooltip.textContent=hint!;
+   const x=Math.max(10,Math.min(hoverPointer.clientX+16,innerWidth-tooltip.offsetWidth-12));
+   const y=hoverPointer.clientY+tooltip.offsetHeight+28>innerHeight?hoverPointer.clientY-tooltip.offsetHeight-16:hoverPointer.clientY+20;
+   tooltip.style.left=`${x}px`;tooltip.style.top=`${Math.max(10,y)}px`;
+  }
  }
  canvas.addEventListener('pointerdown',e=>{
   if(e.button!==0&&e.pointerType!=='touch')return;
@@ -169,21 +179,20 @@ function initRoom(){
  canvas.addEventListener('pointercancel',e=>{activePointers.delete(e.pointerId);gestureMoved=true;hoverPointer=null;highlight(null);});
  canvas.addEventListener('pointerleave',()=>{hoverPointer=null;highlight(null);});
  window.addEventListener('blur',()=>{activePointers.clear();gestureMoved=true;hoverPointer=null;highlight(null);});
+ window.addEventListener('scroll',()=>{hoverPointer=null;highlight(null);},{passive:true});
+ window.addEventListener('keydown',e=>{if(e.key==='Escape'){hoverPointer=null;highlight(null);}});
  dialog.addEventListener('close',()=>{hoverDirty=true;});
 
- const zoomIn=$<HTMLButtonElement>('#zoom-in'),zoomOut=$<HTMLButtonElement>('#zoom-out');
- function syncZoom(){zoomIn.disabled=camera.zoom>=controls.maxZoom-.001;zoomOut.disabled=camera.zoom<=controls.minZoom+.001;$('#zoom-level').textContent=`${Math.round(camera.zoom*100)}%`;}
- function zoomBy(factor:number){camera.zoom=THREE.MathUtils.clamp(camera.zoom*factor,controls.minZoom,controls.maxZoom);camera.updateProjectionMatrix();controls.update();syncZoom();hoverDirty=true;}
- zoomIn.addEventListener('click',()=>zoomBy(1.2));zoomOut.addEventListener('click',()=>zoomBy(1/1.2));
- controls.addEventListener('change',()=>{hoverDirty=true;syncZoom();});
+ function zoomBy(factor:number){camera.zoom=THREE.MathUtils.clamp(camera.zoom*factor,controls.minZoom,controls.maxZoom);camera.updateProjectionMatrix();controls.update();hoverDirty=true;}
+ controls.addEventListener('change',()=>{hoverDirty=true;});
  function resetView(){
   const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.reset();controls.enableDamping=damping;
-  highlight(null);syncZoom();toast('回到最初的小房间');
+  highlight(null);toast('回到最初的小房间');
  }
  $('#reset-view').addEventListener('click',resetView);
  canvas.addEventListener('keydown',e=>{if(e.key==='+'||e.key==='='){e.preventDefault();zoomBy(1.2);}else if(e.key==='-'){e.preventDefault();zoomBy(1/1.2);}else if(e.key==='0'){e.preventDefault();resetView();}});
  function resize(){const w=stage.clientWidth,h=stage.clientHeight;const aspect=w/h;const extent=innerWidth<=700?8:aspect<.8?7.7:aspect<1.05?6.8:5.7;camera.left=-extent*aspect;camera.right=extent*aspect;camera.top=extent;camera.bottom=-extent;camera.updateProjectionMatrix();renderer.setSize(w,h,false);composer.setSize(w,h);hoverDirty=true;}
- new ResizeObserver(resize).observe(stage);resize();syncZoom();let blend=night?1:0;let lastTime=0;
+ new ResizeObserver(resize).observe(stage);resize();let blend=night?1:0;let lastTime=0;
  renderer.setAnimationLoop((time)=>{
   if(document.hidden||time-lastTime<1000/40)return;
   const dt=lastTime?Math.min((time-lastTime)/1000,.05):.025;lastTime=time;
@@ -195,7 +204,7 @@ function initRoom(){
   composer.render();$('#loading').hidden=true;
  });
  if(import.meta.env.DEV)(window as unknown as {roomDebug:unknown}).roomDebug={state:bearController.getState,project:(point:number[])=>{const p=new THREE.Vector3(...point as [number,number,number]).project(camera);const r=canvas.getBoundingClientRect();return {x:r.left+(p.x*.5+.5)*r.width,y:r.top+(-p.y*.5+.5)*r.height};},targets:()=>model.clickable.map(o=>({name:o.name,action:o.userData.action,city:o.userData.city})),hover:()=>hovered?.name??null,objects:()=>model.clickable.map(o=>{const p=new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).project(camera);const r=canvas.getBoundingClientRect();return {name:o.name,action:o.userData.action,x:r.left+(p.x*.5+.5)*r.width,y:r.top+(-p.y*.5+.5)*r.height};})};
- canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#fallback').hidden=false;$('#loading').hidden=true;zoomIn.disabled=true;zoomOut.disabled=true;$('#reset-view').setAttribute('disabled','');});canvas.addEventListener('webglcontextrestored',()=>location.reload());
+ canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('#fallback').hidden=false;$('#loading').hidden=true;document.body.classList.add('room-unavailable');$('#reset-view').setAttribute('disabled','');});canvas.addEventListener('webglcontextrestored',()=>location.reload());
 }
-try{initRoom();}catch(error){console.error('Room rendering unavailable',error);$('#loading').hidden=true;$('#fallback').hidden=false;for(const id of ['reset-view','zoom-in','zoom-out'])$(`#${id}`).setAttribute('disabled','');}
+try{initRoom();}catch(error){console.error('Room rendering unavailable',error);$('#loading').hidden=true;$('#fallback').hidden=false;document.body.classList.add('room-unavailable');$('#reset-view').setAttribute('disabled','');}
 

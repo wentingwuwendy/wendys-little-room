@@ -100,7 +100,7 @@ export function createCozyRoom(){
  const cup=cyl(room,trim,.135,.23,[-.62,2.14,-1.48]);cyl(room,mat('#574432'),.112,.007,[-.62,2.261,-1.48]);const handle=new T.Mesh(new T.TorusGeometry(.085,.024,10,24),trim);handle.position.set(-.45,2.15,-1.48);room.add(handle);void cup;
  // Record player and a tiny envelope.
  const player=createRecordPlayer();player.position.set(1.8,2.12,-1.83);room.add(player);action(player,'music');
- const letter=new T.Group();room.add(letter);action(letter,'contact');box(letter,trim,[.44,.018,.28],[2.87,2.05,-1.5]);
+ const letter=new T.Group();room.add(letter);action(letter,'contact');box(letter,trim,[.44,.018,.28],[2.87,2.10,-1.5]);
  // Framed travel magnet collection on the left wall.
  const board=new T.Group();board.name='international-board';board.position.set(-3.86,3.65,2.04);board.rotation.y=Math.PI/2;room.add(board);action(board,'travel');
  box(board,oak,[1.78,1.74,.08],[0,0,0]);box(board,mat('#52645e'),[1.62,1.58,.025],[0,0,.055]);
