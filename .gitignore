@@ -8,4 +8,5 @@ qa/
 .env
 .env.*
 *.pdf
+!public/resume/wendy-wu-resume.pdf
 *.zip

@@ -10,7 +10,7 @@ import { createRecordPlayer } from './recordPlayer';
 import { createCurtains } from './curtains';
 import { createKeyboardIPad, createPhoneController } from './deviceModels';
 
-export type Action = 'experience'|'projects'|'about'|'life'|'travel'|'contact'|'lamp'|'books'|'music'|'games'|'shows'|'objects'|'chair'|'bear';
+export type Action = 'experience'|'projects'|'about'|'life'|'travel'|'contact'|'lamp'|'books'|'music'|'games'|'shows'|'objects'|'chair'|'bear'|'curtains';
 export function createCozyRoom(){
  const room=new T.Group();
  const clickable:T.Object3D[]=[];
@@ -41,7 +41,8 @@ export function createCozyRoom(){
 
  for(const x of [-.8,3.34])box(room,trim,[.12,3.12,.15],[x,3.75,-2.78]);for(const y of [2.2,5.29])box(room,trim,[4.25,.12,.21],[1.27,y,-2.76]);
  box(room,trim,[.085,3.02,.1],[1.27,3.75,-2.72]);box(room,trim,[4.15,.07,.1],[1.27,3.6,-2.72]);box(room,oak,[4.5,.14,.45],[1.27,2.17,-2.64]);
- room.add(createCurtains());
+ const curtains=createCurtains();room.add(curtains.group);
+ for(const panel of curtains.panels)action(panel,'curtains');
  // One continuous L-shaped desktop: long window-facing run and perpendicular shelving return.
  const desk=new T.Group();desk.name='integrated-corner-desk';room.add(desk);
  const outline=new T.Shape();outline.moveTo(-3.79,2.57);outline.lineTo(3.47,2.57);outline.lineTo(3.47,1.10);outline.lineTo(-2.08,1.10);outline.lineTo(-2.08,-1.10);outline.lineTo(-3.79,-1.10);outline.closePath();
@@ -131,7 +132,7 @@ export function createCozyRoom(){
  cyl(room,linen,.45,.44,[2.6,.49,1.48]);const ottomanSeam=new T.Mesh(new T.TorusGeometry(.442,.009,6,72),clothMaterial('#c4bda9'));ottomanSeam.rotation.x=Math.PI/2;ottomanSeam.position.set(2.6,.687,1.48);room.add(ottomanSeam);
  const gamepad=createPhoneController();gamepad.position.set(2.6,.755,1.48);gamepad.rotation.set(-Math.PI/2,0,-.15);gamepad.scale.setScalar(.255);room.add(gamepad);action(gamepad,'games');
  const ipad=createKeyboardIPad();ipad.position.set(-1.57,2.065,-1.80);ipad.rotation.y=.64;ipad.scale.setScalar(.75);room.add(ipad);action(ipad,'shows');
- return {room,clickable,bear,chair,folders,bookGroup,board,ipad,gamepad,player,setNight(_night:boolean,blend:number){nightWindowMat.opacity=blend;shadeMat.emissiveIntensity=blend*.75;bulb.intensity=blend*9;}};
+ return {room,clickable,bear,chair,folders,bookGroup,board,ipad,gamepad,player,curtains,setNight(_night:boolean,blend:number){nightWindowMat.opacity=blend;shadeMat.emissiveIntensity=blend*.75;bulb.intensity=blend*9;}};
 }
 
 

@@ -32,11 +32,17 @@ $('#year').textContent=String(new Date().getFullYear());
 function toast(message:string){$('#toast').textContent=message;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),2800);}
 function heading(key:Story,description:string){return `<h2 id="dialog-title">${titles[key][1]}</h2><p class="lead">${description}</p>`;}
 function details(items:string[][]){return `<ul class="detail-list">${items.map(([title,body])=>`<li><strong>${title}</strong>${body}</li>`).join('')}</ul>`;}
-function show(key:Story,html:string,objectMode=false){dialog.classList.toggle('object-mode',objectMode);dialog.classList.remove('folder-mode');disposeBooks();disposeBooks=()=>{};$('#dialog-kicker').textContent=titles[key][0];content.innerHTML=html;if(!dialog.open){returnFocus=document.activeElement as HTMLElement;dialog.showModal();}dialog.scrollTop=0;$('#close-dialog').focus();const gallery=content.querySelector<HTMLElement>('.book-gallery');if(gallery)disposeBooks=mountBookGallery(gallery);}
+function show(key:Story,html:string,objectMode=false){dialog.classList.toggle('object-mode',objectMode);dialog.classList.remove('folder-mode','resume-mode');disposeBooks();disposeBooks=()=>{};$('#dialog-kicker').textContent=titles[key][0];content.innerHTML=html;if(!dialog.open){returnFocus=document.activeElement as HTMLElement;dialog.showModal();}dialog.scrollTop=0;$('#close-dialog').focus();const gallery=content.querySelector<HTMLElement>('.book-gallery');if(gallery)disposeBooks=mountBookGallery(gallery);}
 function openStory(key:Story){
+ if(key==='about'){
+  const pdf=(window as Window & {wendyResumePDF?:string}).wendyResumePDF??`${import.meta.env.BASE_URL}resume/wendy-wu-resume.pdf`;
+  show(key,`<div class="resume-heading"><h2 id="dialog-title">我的简历</h2><a href="${pdf}" target="_blank" rel="noopener">打开 PDF ↗</a></div><div class="resume-preview"><button class="resume-zoom" aria-label="放大简历" aria-pressed="false" title="点击放大简历"><img class="resume-page" src="${import.meta.env.BASE_URL}resume/wendy-wu-resume.webp" alt="吴雯婷的 PDF 简历：教育背景、实习经历、项目经历及活动与技能"></button></div>`);
+  const zoom=content.querySelector<HTMLButtonElement>('.resume-zoom')!;
+  zoom.addEventListener('click',()=>{const expanded=zoom.classList.toggle('expanded');zoom.setAttribute('aria-pressed',String(expanded));zoom.setAttribute('aria-label',expanded?'缩小简历':'放大简历');zoom.title=expanded?'点击缩小简历':'点击放大简历';});
+  dialog.classList.add('resume-mode');return;
+ }
  if(key==='experience'){show(key,`<h2 id="dialog-title" class="sr-only">三份实习档案</h2><div class="folder-stack" aria-label="三份实习档案">${internships.map((job,i)=>`<button class="stack-file" style="--tilt:${(i-1)*7}deg;--file-color:${['#a5af95','#c9b59a','#b79586'][i]}" data-job="${i}"><span class="file-tab">FILE 0${i+1}</span><span class="file-paper"></span><span class="file-front"><span class="file-company">${job.name}</span><span class="file-role">${job.role}</span><span class="file-date">${job.date}</span><span class="file-location">${job.city} / INTERNSHIP</span><span class="file-open">翻开档案 ↗</span></span></button>`).join('')}</div>`,true);dialog.classList.add('folder-mode');}
  if(key==='projects')show(key,heading(key,'从一个问题出发，和团队一起，把创意向前推进一点。')+projects.map((p,i)=>`<button class="project-card" data-project="${i}"><span class="meta">0${i+1} / ${p.brand}</span><span class="arrow">↗</span><h3>${p.name}</h3><p>${p.role} · ${p.date}</p></button>`).join(''));
- if(key==='about')show(key,heading(key,'你好，我是吴雯婷，也可以叫我 Wendy。这里有我的学习轨迹，也有课堂之外的生活。')+`<div class="chips"><span>语言与表达</span><span>数据与商业</span><span>对生活保持好奇</span></div><p class="section-label">沿着好奇心走过的路</p><div class="timeline"><div class="timeline-item"><span class="meta">2026.08 — 2027.06 · 香港</span><h3>香港大学 · 商业人工智能</h3><p>把对商业问题的兴趣，延伸到人工智能的应用。</p></div><div class="timeline-item"><span class="meta">2022.09 — 2026.06 · 厦门</span><h3>厦门大学 · 英语专业，辅修统计学</h3><p>GPA 3.7 / 4.0。学习概率论、数理统计、计算数据分析、数据挖掘、活动营销与英汉口译。</p></div><div class="timeline-item"><span class="meta">2024.08 — 2024.12 · 美国伯克利</span><h3>加州大学伯克利分校 · 学期交流</h3><p>文理学院，GPA 4.0 / 4.0。选修定价、AI 与媒体、语言学。</p></div></div><p class="section-label">不在课堂的时候</p><p class="lead">做过中国国际投资贸易洽谈会的翻译志愿者、中国电影金鸡奖志愿者，也在厦大外文女子篮球队打球，担任过宣传中心副部长。房间里的另一面，是游戏、追剧、看现场，还有一架喜欢的书。</p><p class="section-label">随身携带的工具箱</p><div class="chips">${['SQL','Python','Power BI','Vibe Coding','Microsoft Office','Photoshop','视频剪辑','公众号排版'].map(s=>`<span>${s}</span>`).join('')}</div><p class="meta">英语 IELTS 7.5 · 口语 7.0 / 法语入门 / 闽南语母语</p><button class="explore-link" data-open="life">翻到生活的那一页 ↗</button>`);
  if(key==='life')renderLife('music');
  if(key==='travel')openFocused('travel');
  if(key==='contact')show(key,heading(key,'关于工作、共同的兴趣，或者只是一声问候，都欢迎。')+`<div class="contact-card"><small>EMAIL</small><a href="mailto:wentingwu.wendy@gmail.com">wentingwu.wendy@gmail.com ↗</a></div><div class="contact-card"><small>WECHAT</small><strong>Wendywu55t</strong><button id="copy-wechat">复制微信号</button></div><p class="dialog-note">谢谢你来我的小房间坐坐。希望下次，我们又有新的故事可以交换。</p>`);
@@ -105,6 +111,16 @@ function initRoom(){
  model.room.traverseVisible(obj=>{if(obj instanceof THREE.Mesh&&!obj.userData.noOutline&&!obj.userData.noRaycast)raycastMeshes.push(obj);});
  let hovered:THREE.Object3D|null=null;
  const tooltip=$<HTMLDivElement>('#object-tooltip');
+ const curtainButton=document.createElement('button');
+ curtainButton.id='curtain-toggle';curtainButton.textContent='合上窗帘';curtainButton.setAttribute('aria-pressed','false');
+ $('.keyboard-explore').append(curtainButton);
+ function toggleCurtains(){
+  model.curtains.toggle();
+  const closed=model.curtains.getState().closed;
+  curtainButton.textContent=closed?'拉开窗帘':'合上窗帘';curtainButton.setAttribute('aria-pressed',String(closed));
+  hoverDirty=true;
+ }
+ curtainButton.addEventListener('click',toggleCurtains);
  const objectHints:Partial<Record<Action,string>>={experience:'文件夹 · 查看实习经历',projects:'电脑 · 查看项目经历',about:'笔记本 · 查看我的简历',books:'书籍 · 翻看喜欢的书',music:'唱片机 · 切换收藏唱片',games:'游戏机 · 玩跳跃小游戏',shows:'iPad · 查看喜欢的剧集',travel:'冰箱贴 · 浏览国际经历',contact:'信封 · 联系我',lamp:'切换白天 / 黑夜',chair:'让小熊猫坐下',bear:'点地面，让小熊猫散步',objects:'查看收藏的小物件'};
  let hoverPointer:{clientX:number;clientY:number}|null=null,hoverDirty=false;
  let pickedPoint=new THREE.Vector3();
@@ -130,6 +146,7 @@ function initRoom(){
  }
  function visitObject(object:THREE.Object3D){
   const id=object.userData.action as Action;
+  if(id==='curtains'){toggleCurtains();return;}
   if(id==='chair'){bearController.sitDown();return;}
   if(id==='bear'){$('#bear-status').textContent='点一处空地，带我一起走走吧。';return;}
   const spots:Partial<Record<Action,[number,number,number,number,number,'touch'|'look'|'read'|'sit']>>={
@@ -147,7 +164,7 @@ function initRoom(){
    outline.selectedObjects=meshes;
   }
   canvas.style.cursor=activePointers.size?'grabbing':obj?.userData.ground?'crosshair':obj?'pointer':'grab';
-  const hint=obj&&!obj.userData.ground?objectHints[obj.userData.action as Action]:undefined;
+  const hint=obj&&!obj.userData.ground?(obj.userData.action==='curtains'?(model.curtains.getState().closed?'拉开窗帘':'合上窗帘'):objectHints[obj.userData.action as Action]):undefined;
   tooltip.hidden=!hint||!hoverPointer||activePointers.size>0||dialog.open;
   if(!tooltip.hidden&&hoverPointer){
    tooltip.textContent=hint!;
@@ -197,6 +214,7 @@ function initRoom(){
   if(document.hidden||time-lastTime<1000/40)return;
   const dt=lastTime?Math.min((time-lastTime)/1000,.05):.025;lastTime=time;
   if(bearController.update(dt)){renderer.shadowMap.needsUpdate=true;hoverDirty=true;}
+  if(model.curtains.update(dt,reduced)){renderer.shadowMap.needsUpdate=true;hoverDirty=true;}
   model.room.updateMatrixWorld(true);blend=reduced?(night?1:0):THREE.MathUtils.lerp(blend,night?1:0,.07);
   ambient.intensity=1.8-blend*1.05;sun.intensity=2.4-blend*2.05;fill.intensity=.8-blend*.35;fill.color.set(blend>.5?'#9bbfdf':'#c8ddd5');renderer.toneMappingExposure=1.15-blend*.17;
   model.setNight(night,blend);controls.update();
